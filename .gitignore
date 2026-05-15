@@ -1,0 +1,4 @@
+/target
+**/*.rs.bk
+*.hwreport.txt
+nitro-hwreport.txt

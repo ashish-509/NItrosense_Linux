@@ -1,0 +1,11 @@
+[package]
+name = "nitro-hal"
+description = "Read-only hardware abstraction and discovery for Acer Nitro laptops"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
