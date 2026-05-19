@@ -1,0 +1,15 @@
+[package]
+name = "nitro-discover"
+description = "Read-only hardware discovery tool for the Nitro-Linux project"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nitro-discover"
+path = "src/main.rs"
+
+[dependencies]
+nitro-hal = { workspace = true }
+serde_json = { workspace = true }
