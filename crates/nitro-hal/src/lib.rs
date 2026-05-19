@@ -9,4 +9,5 @@ pub mod input;
 pub mod leds;
 pub mod pci;
 pub mod power;
+pub mod telemetry;
 pub mod wmi;
