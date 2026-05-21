@@ -6,6 +6,7 @@ pub mod acer;
 pub mod control;
 pub mod dmi;
 pub mod ec;
+pub mod fan;
 pub mod hwmon;
 pub mod input;
 pub mod leds;
