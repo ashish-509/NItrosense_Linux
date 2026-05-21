@@ -11,6 +11,7 @@ pub mod hwmon;
 pub mod input;
 pub mod leds;
 pub mod pci;
+pub mod platform_profile;
 pub mod power;
 pub mod probe;
 pub mod telemetry;
