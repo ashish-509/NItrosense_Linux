@@ -15,6 +15,7 @@ pub mod platform_profile;
 pub mod power;
 pub mod probe;
 pub mod profile;
+pub mod rgb;
 pub mod telemetry;
 pub mod wmi;
 
