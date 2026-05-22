@@ -14,8 +14,10 @@ pub mod pci;
 pub mod platform_profile;
 pub mod power;
 pub mod probe;
+pub mod profile;
 pub mod telemetry;
 pub mod wmi;
 
 pub use probe::{run, CapabilitySummary, Cpu, Kernel, Report};
 pub use control::{CpuBackup, CpuStatus};
+pub use profile::Profile;
