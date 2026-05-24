@@ -3,6 +3,7 @@
 mod sysfs;
 
 pub mod acer;
+pub mod battery;
 pub mod control;
 pub mod dmi;
 pub mod ec;
