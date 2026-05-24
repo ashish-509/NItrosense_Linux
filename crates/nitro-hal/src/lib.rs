@@ -7,6 +7,7 @@ pub mod battery;
 pub mod control;
 pub mod dmi;
 pub mod ec;
+pub mod evdev;
 pub mod fan;
 pub mod hwmon;
 pub mod input;
