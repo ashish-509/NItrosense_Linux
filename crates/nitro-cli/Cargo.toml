@@ -1,0 +1,15 @@
+[package]
+name = "nitro-cli"
+description = "Unified command-line control for Acer Nitro laptops"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nitro"
+path = "src/main.rs"
+
+[dependencies]
+nitro-hal = { workspace = true }
+serde_json = { workspace = true }

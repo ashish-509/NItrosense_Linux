@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/nitro-hal", "crates/nitro-discover"]
+members = ["crates/nitro-hal", "crates/nitro-discover", "crates/nitro-cli"]
 
 [workspace.package]
 version = "0.1.0"
