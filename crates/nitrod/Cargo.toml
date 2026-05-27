@@ -1,0 +1,14 @@
+[package]
+name = "nitrod"
+description = "Privileged background daemon for Acer Nitro control (profiles, thermal guard, hotkey)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nitrod"
+path = "src/main.rs"
+
+[dependencies]
+nitro-hal = { workspace = true }
