@@ -1,0 +1,24 @@
+[Unit]
+Description=Nitro (Acer) profile, thermal-guard and hotkey daemon
+Documentation=https://github.com/
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/nitrod
+# Failsafe: whenever the daemon stops or crashes, return the CPU to balanced
+# defaults. Fans are never touched by us, so they remain under firmware control.
+ExecStopPost=/usr/local/bin/nitrod --restore
+Restart=on-failure
+RestartSec=2
+Nice=-5
+# Hardening: the daemon only needs sysfs/procfs/debugfs and /run + /etc/nitro.
+ProtectHome=yes
+NoNewPrivileges=yes
+ProtectKernelLogs=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+ReadWritePaths=/run /etc/nitro /sys/devices/system/cpu /sys/class/power_supply
+
+[Install]
+WantedBy=multi-user.target
