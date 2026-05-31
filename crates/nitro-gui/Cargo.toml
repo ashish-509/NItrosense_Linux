@@ -1,0 +1,24 @@
+[package]
+name = "nitro-gui"
+description = "Unified graphical control panel for Acer Nitro laptops"
+version.workspace = true
+edition.workspace = true
+# eframe 0.35 needs a newer toolchain than the workspace MSRV, so override here.
+rust-version = "1.92"
+license.workspace = true
+
+[[bin]]
+name = "nitro-gui"
+path = "src/main.rs"
+
+[dependencies]
+nitro-hal = { workspace = true }
+# glow (OpenGL) backend only — keeps the dependency tree light (no wgpu) and is
+# maximally compatible on Wayland/X11 desktops. GL/Wayland/X11 libs are loaded at
+# runtime (dlopen), so no -devel system packages are needed to build.
+eframe = { version = "0.35", default-features = false, features = [
+    "default_fonts",
+    "glow",
+    "wayland",
+    "x11",
+] }
