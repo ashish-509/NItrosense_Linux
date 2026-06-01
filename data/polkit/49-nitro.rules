@@ -1,0 +1,23 @@
+// Allow the local desktop user to run the Nitro control CLI without a password.
+//
+// nitro-gui applies every change (profile, fan, RGB, charge limit) by invoking
+// the installed `nitro` binary through pkexec, which maps to the
+// org.freedesktop.policykit.exec action. Without this rule polkit's default
+// policy prompts for the admin/login password on every single change.
+//
+// Scope is deliberately narrow: the authorization is only granted when the
+// program being executed is the installed `nitro` binary, and only for an
+// active local login session (the person physically using this machine) or a
+// member of the optional `nitro` group. All other pkexec usage is unaffected.
+polkit.addRule(function (action, subject) {
+    if (action.id != "org.freedesktop.policykit.exec") {
+        return;
+    }
+    var program = action.lookup("program");
+    if (program != "/usr/local/bin/nitro" && program != "/usr/bin/nitro") {
+        return;
+    }
+    if ((subject.active && subject.local) || subject.isInGroup("nitro")) {
+        return polkit.Result.YES;
+    }
+});
