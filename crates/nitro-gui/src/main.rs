@@ -50,6 +50,7 @@ struct Shared {
     fan_supported: bool,
     rgb_supported: bool,
     battery_supported: bool,
+    charge_fixed: bool,
     fan_readback: Option<String>,
     cfg: Option<Config>,
 }
@@ -75,6 +76,7 @@ fn spawn_poller(ctx: egui::Context, shared: Arc<Mutex<Shared>>, foreground: Arc<
         let fan_supported = fan::supported();
         let rgb_supported = rgb::supported();
         let battery_supported = battery::supported();
+        let charge_fixed = matches!(battery::limit_kind(), Some(battery::LimitKind::FixedToggle));
         let fan_readback = if fan_supported { fan::get() } else { None };
 
         if let Ok(mut s) = shared.lock() {
@@ -84,6 +86,7 @@ fn spawn_poller(ctx: egui::Context, shared: Arc<Mutex<Shared>>, foreground: Arc<
             s.fan_supported = fan_supported;
             s.rgb_supported = rgb_supported;
             s.battery_supported = battery_supported;
+            s.charge_fixed = charge_fixed;
             s.fan_readback = fan_readback;
             s.cfg = Some(cfg);
             s.loaded = true;
@@ -113,6 +116,7 @@ struct View {
     fan_supported: bool,
     rgb_supported: bool,
     battery_supported: bool,
+    charge_fixed: bool,
     fan_readback: String,
     charge_limit: Option<u8>,
     rgb_desc: String,
@@ -239,6 +243,7 @@ impl NitroApp {
         v.fan_supported = s.fan_supported;
         v.rgb_supported = s.rgb_supported;
         v.battery_supported = s.battery_supported;
+        v.charge_fixed = s.charge_fixed;
         v.fan_readback = s.fan_readback.clone().unwrap_or_else(|| "?".into());
 
         if let Some(cfg) = &s.cfg {
@@ -477,6 +482,7 @@ impl NitroApp {
         let auto = self.view.auto;
         let current = self.view.profile.clone();
         let batt_supported = self.view.battery_supported;
+        let charge_fixed = self.view.charge_fixed;
         let charge_limit = self.view.charge_limit;
         let busy = self.busy();
 
@@ -516,23 +522,36 @@ impl NitroApp {
         ui.add_space(12.0);
         ui.separator();
         ui.heading("Battery charge limit");
-        if batt_supported {
-            ui.label("Cap charging to protect long-term battery health.");
-        } else {
+        if !batt_supported {
             ui.colored_label(
                 egui::Color32::from_rgb(0xd1, 0x9b, 0x37),
                 "This firmware/kernel does not expose a charge threshold; the value is saved as a preference only.",
             );
+        } else if charge_fixed {
+            ui.label(
+                "This firmware only offers a fixed 80% cap (on/off); arbitrary percentages are not supported.",
+            );
+        } else {
+            ui.label("Cap charging to protect long-term battery health.");
         }
         ui.horizontal(|ui| {
-            ui.checkbox(&mut self.charge_on, "Enable");
-            ui.add_enabled(
-                self.charge_on,
-                egui::Slider::new(&mut self.charge_pct, 20..=100).suffix("%"),
-            );
+            if charge_fixed {
+                ui.checkbox(&mut self.charge_on, "Limit charging to 80%");
+            } else {
+                ui.checkbox(&mut self.charge_on, "Enable");
+                ui.add_enabled(
+                    self.charge_on,
+                    egui::Slider::new(&mut self.charge_pct, 20..=100).suffix("%"),
+                );
+            }
             if ui.add_enabled(!busy, egui::Button::new("Apply")).clicked() {
                 if self.charge_on {
-                    self.run(vec!["charge-limit".into(), self.charge_pct.to_string()]);
+                    let val = if charge_fixed {
+                        battery::FIXED_CAP
+                    } else {
+                        self.charge_pct
+                    };
+                    self.run(vec!["charge-limit".into(), val.to_string()]);
                 } else {
                     self.run(vec!["charge-limit".into(), "off".into()]);
                 }

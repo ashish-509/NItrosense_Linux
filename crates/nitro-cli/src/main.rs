@@ -133,19 +133,32 @@ fn cmd_charge_limit(arg: Option<&str>) -> ExitCode {
             Ok(pct) => {
                 ensure_root();
                 let mut cfg = Config::load();
-                cfg.charge_limit = Some(pct);
+                // The Acer `battery_limiter` is a fixed-cap on/off toggle: any
+                // enabled value takes effect as the same 80% cap, so store and
+                // report that rather than a percentage the firmware ignores.
+                let effective = match battery::limit_kind() {
+                    Some(battery::LimitKind::FixedToggle) if pct < 100 => battery::FIXED_CAP,
+                    _ => pct,
+                };
+                cfg.charge_limit = Some(effective);
                 if let Err(e) = cfg.save() {
                     eprintln!("nitro: could not save config: {e}");
                     return ExitCode::FAILURE;
                 }
                 if !battery::supported() {
-                    println!("nitro: saved {pct}% preference, but this kernel/firmware does not");
+                    println!("nitro: saved {effective}% preference, but this kernel/firmware does not");
                     println!("       expose a charge threshold yet, so it cannot be enforced.");
                     return ExitCode::SUCCESS;
                 }
-                match battery::set_limit(pct) {
+                match battery::set_limit(effective) {
                     Ok(()) => {
-                        println!("nitro: battery charge limit set to {pct}%");
+                        if effective != pct {
+                            println!(
+                                "nitro: this firmware only supports a fixed {effective}% cap; applied {effective}% (requested {pct}%)."
+                            );
+                        } else {
+                            println!("nitro: battery charge limit set to {effective}%");
+                        }
                         ExitCode::SUCCESS
                     }
                     Err(e) => {

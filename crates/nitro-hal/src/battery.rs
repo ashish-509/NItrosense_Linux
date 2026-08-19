@@ -20,6 +20,19 @@ const START: &str = "charge_control_start_threshold";
 pub const MIN_LIMIT: u8 = 20;
 pub const MAX_LIMIT: u8 = 100;
 
+/// The fixed cap the Acer `battery_limiter` toggle enforces when enabled; the
+/// firmware exposes no other value on that interface.
+pub const FIXED_CAP: u8 = 80;
+
+/// Which charge-limit interface the running kernel/firmware exposes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LimitKind {
+    /// Standard `charge_control_end_threshold`: any percent in range works.
+    Threshold,
+    /// Acer linuwu-sense `battery_limiter`: a fixed 80% cap on/off toggle only.
+    FixedToggle,
+}
+
 fn battery_dir() -> Option<PathBuf> {
     fs::read_dir(PS_BASE)
         .ok()?
@@ -32,13 +45,24 @@ fn battery_dir() -> Option<PathBuf> {
         })
 }
 
-/// True when a charge-limit interface exists: either the standard sysfs end
-/// threshold or the Acer gaming-WMI limiter.
+/// Report which charge-limit interface exists, preferring the arbitrary-percent
+/// sysfs threshold over the Acer fixed-cap toggle.
+pub fn limit_kind() -> Option<LimitKind> {
+    if battery_dir().map(|d| d.join(END).exists()).unwrap_or(false) {
+        return Some(LimitKind::Threshold);
+    }
+    if acer::sense_dir()
+        .map(|d| d.join("battery_limiter").exists())
+        .unwrap_or(false)
+    {
+        return Some(LimitKind::FixedToggle);
+    }
+    None
+}
+
+/// True when any charge-limit interface exists.
 pub fn supported() -> bool {
-    battery_dir().map(|d| d.join(END).exists()).unwrap_or(false)
-        || acer::sense_dir()
-            .map(|d| d.join("battery_limiter").exists())
-            .unwrap_or(false)
+    limit_kind().is_some()
 }
 
 pub fn get_limit() -> Option<u8> {
@@ -49,7 +73,7 @@ pub fn get_limit() -> Option<u8> {
     }
     if let Some(sense) = acer::sense_dir() {
         if acer::read_attr(&sense, "battery_limiter").as_deref() == Some("1") {
-            return Some(80);
+            return Some(FIXED_CAP);
         }
     }
     None
