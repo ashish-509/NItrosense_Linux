@@ -109,6 +109,31 @@ PYEOF
 }
 patch_source
 
+# 3b. Kernel 6.17+/Fedora 7.2 removed strncpy() from <linux/string.h>, so the
+#     module fails to build there ("implicit declaration of function strncpy").
+#     Swap the sysfs store helpers to strscpy(). Each site is
+#     `len = min(count, sizeof(dst) - 1); strncpy(dst, buf, len);` followed by a
+#     manual NUL, so strscpy(dst, buf, len + 1) copies the same len bytes (its
+#     size arg copies size-1) within bounds and NUL-terminates. Idempotent.
+patch_strncpy() {
+    local f="$SRC/src/linuwu_sense.c"
+    [ -f "$f" ] || { echo "!! source not found: $f"; return 1; }
+    if ! grep -q 'strncpy(' "$f"; then
+        echo ">> strncpy already absent (newer kernel compat); skipping."
+        return 0
+    fi
+    echo ">> Replacing strncpy() with strscpy() for kernel 6.17+/7.2 compat."
+    python3 - "$f" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+data = open(path, encoding="utf-8", errors="surrogateescape").read()
+data, n = re.subn(r"strncpy\((.*?), len\)", r"strscpy(\1, len + 1)", data)
+open(path, "w", encoding="utf-8", errors="surrogateescape").write(data)
+print(f"   replaced {n} strncpy() call(s) with strscpy().")
+PYEOF
+}
+patch_strncpy
+
 # A previous version of this script forced capabilities with a modprobe option.
 # The DMI quirk supersedes it (and additionally enables RGB), so drop any stale
 # force_caps drop-in to avoid a confusing capability override.
